@@ -1670,10 +1670,41 @@ bool handleKey(int c) {
     return true;
 }
 
+int readImageDirIfFlagEnabled()
+{
+    // Open & read image dir if present
+    if (!FLAGS_image_dir.empty()) {
+        std::string folderName = FLAGS_image_dir;
+        if ( !boost::filesystem::exists( folderName ) ) {
+            LOG(ERROR) << "Folder " << folderName << " does not exist.";
+            return -1;
+        }
+        boost::filesystem::directory_iterator end_itr; // default construction yields past-the-end
+        for ( boost::filesystem::directory_iterator itr( folderName ); itr != end_itr; ++itr ) {
+            if ( boost::filesystem::is_directory(itr->status()) ) {
+                // Skip directories
+            } else if (itr->path().extension()==".jpg" || itr->path().extension()==".png" || itr->path().extension()==".bmp") {
+                //  std::string filename = itr->path().string();
+                global.image_list.push_back( itr->path().string() );
+            }
+        }
+        std::sort(global.image_list.begin(), global.image_list.end());
+        CHECK_GE(global.image_list.size(),0);
+    }
+
+    return 0;
+}
+
 // The global parameters must be assign after the main has started, not statically before. Otherwise, they will take the default values, not the user-introduced values.
 int setGlobalParametersFromFlags() {
     int nRead = sscanf(FLAGS_resolution.c_str(), "%dx%d", &DISPLAY_RESOLUTION_WIDTH, &DISPLAY_RESOLUTION_HEIGHT);
     CHECK_EQ(nRead,2) << "Error, resolution format (" <<  FLAGS_resolution << ") invalid, should be e.g., 960x540 ";
+    
+    // Configure frames source
+    auto return_value_i = readImageDirIfFlagEnabled();
+    if (return_value_i != 0)
+        return return_value_i;
+
     if (DISPLAY_RESOLUTION_WIDTH==-1 && !FLAGS_video.empty()) {
         cv::VideoCapture cap;
         CHECK(cap.open(FLAGS_video)) << "Couldn't open video " << FLAGS_video;
@@ -1707,7 +1738,7 @@ int setGlobalParametersFromFlags() {
     }
 
     if (!FLAGS_write_json.empty()) {
-        // Create folder if it does not exist
+        // Create folder if it does not exist	
         boost::filesystem::path dir(FLAGS_write_json);
         if (!boost::filesystem::is_directory(dir) && !boost::filesystem::create_directory(dir)) {
             LOG(ERROR) << "Could not write to or create directory " << dir;
@@ -1729,31 +1760,6 @@ int setGlobalParametersFromFlags() {
     return 0;
 }
 
-int readImageDirIfFlagEnabled()
-{
-    // Open & read image dir if present
-    if (!FLAGS_image_dir.empty()) {
-        std::string folderName = FLAGS_image_dir;
-        if ( !boost::filesystem::exists( folderName ) ) {
-            LOG(ERROR) << "Folder " << folderName << " does not exist.";
-            return -1;
-        }
-        boost::filesystem::directory_iterator end_itr; // default construction yields past-the-end
-        for ( boost::filesystem::directory_iterator itr( folderName ); itr != end_itr; ++itr ) {
-            if ( boost::filesystem::is_directory(itr->status()) ) {
-                // Skip directories
-            } else if (itr->path().extension()==".jpg" || itr->path().extension()==".png" || itr->path().extension()==".bmp") {
-                //  std::string filename = itr->path().string();
-                global.image_list.push_back( itr->path().string() );
-            }
-        }
-        std::sort(global.image_list.begin(), global.image_list.end());
-        CHECK_GE(global.image_list.size(),0);
-    }
-
-    return 0;
-}
-
 int main(int argc, char *argv[]) {
     // Initializing google logging (Caffe uses it as its logging module)
     google::InitGoogleLogging("rtcpm");
@@ -1765,12 +1771,7 @@ int main(int argc, char *argv[]) {
     auto return_value = setGlobalParametersFromFlags();
     if (return_value != 0)
         return return_value;
-
-    // Configure frames source
-    return_value = readImageDirIfFlagEnabled();
-    if (return_value != 0)
-        return return_value;
-
+   
     // Running rtcpm
     return_value = rtcpm();
     if (return_value != 0)
