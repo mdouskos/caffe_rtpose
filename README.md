@@ -1,10 +1,19 @@
 Realtime Multiperson Pose Estimation
 ====================================
+## New faster version released as library!!!
+
+### https://github.com/CMU-Perceptual-Computing-Lab/openpose
+
+### We will eventually close this repository and just maintain OpenPose. Please move there!
+
+
+
+## Introduction
 C++ code repo for the ECCV 2016 demo, "Realtime Multiperson Pose Estimation", Zhe Cao, Shih-En Wei, Tomas Simon, Yaser Sheikh. Thanks Ginés Hidalgo Martínez for restructuring the code. 
 
 The [full project repo](https://github.com/ZheC/Multi-Person-Pose-Estimation) includes matlab and python version, and training code.
 
-This project is licensed under the terms of the GPL v3 license [![License](https://img.shields.io/aur/license/yaourt.svg)](LICENSE).
+This project is under the terms of the [license](LICENSE).
 
 ## Quick Start
 1. Required: CUDA & cuDNN installed on your machine.
